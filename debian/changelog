@@ -1,3 +1,16 @@
+postfixadmin (3.1-1-0clazzes2) unstable; urgency=low
+
+  * Removing in-the-way debian/sources killed integration of debian/patches/config-debian.diff,
+    therefore applied that patch manually and removed debian/patches/ alltogether
+
+ -- Christoph Lechleitner <christoph.lechleitner@iteg.at>  Sun, 01 Apr 2018 00:19:00 +0200
+
+postfixadmin (3.1-1-0clazzes1) unstable; urgency=low
+
+  * Adapting for release to deb.clazzes.org using Clazzes.org's PBA, see https://confluence.clazzes.org/x/xQAj
+
+ -- Christoph Lechleitner <christoph.lechleitner@iteg.at>  Sat, 31 Mar 2018 23:33:00 +0200
+
 postfixadmin (3.1-1) unstable; urgency=low
 
   * New upstream release

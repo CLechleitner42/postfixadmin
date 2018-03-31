@@ -1,4 +1,6 @@
+*.swp
 /build-stamp
+/debian/devhost.txt.gz
 /debian/files
 /debian/postfixadmin.debhelper.log
 /debian/postfixadmin.postinst.debhelper

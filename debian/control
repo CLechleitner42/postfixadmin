@@ -1,19 +1,23 @@
 Source: postfixadmin
 Section: admin
 Priority: optional
-Maintainer: Norman Messtorff <normes@normes.org>
-Uploaders: Gaudenz Steinlin <gaudenz@debian.org>, Christoph Martin <martin@uni-mainz.de>
+Maintainer: Christoph Lechleitner <christoph.lechleitner@iteg.at>
 Build-Depends: debhelper (>= 7), po-debconf, dh-apache2
 Standards-Version: 3.9.5
-Vcs-Git: git://anonscm.debian.org/collab-maint/postfixadmin.git
-Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/postfixadmin.git
 Homepage: http://postfixadmin.sourceforge.net
+Vcs-Git: git://github.com/CLechleitner42/postfixadmin.git
+Vcs-Browser: https://github.com/CLechleitner42/postfixadmin
+XBCS-PBA-Category: postfixadmin
+XBCS-PBA-Generation: 3.1
+XBCS-PBA-Distribution: any
+XBCS-PBA-Distributions: any
+XBCS-PBA-Repositories: deb.clazzes.org
 
 Package: postfixadmin
 Architecture: all
 Depends: debconf (>= 0.5), dbconfig-common, wwwconfig-common, apache2 | lighttpd | httpd, libapache2-mod-php | php-cgi | php-fpm | php, php-imap, php-mysql | php-mysqlnd | php-pgsql | php-pgsql | php-sqlite3, php-mbstring, default-mysql-client | mysql-client | postgresql-client | mariadb-client
 Recommends: postfix-mysql | postfix-pgsql, virtual-mysql-server | postgresql | sqlite (>= 3.12.0) | mariadb-server, zendframework, dovecot-core | courier-authlib-mysql | courier-authlib-postgresql, php-cli
-Description: Virtual mail hosting interface for Postfix
+Description: Virtual mail hosting interface for Postfix. github-forked by CLechleitner42, PBA 4 deb.Clazzes.org.
  Postfixadmin is a web interface to manage virtual users and domains
  for a Postfix mail transport agent. It supports Virtual mailboxes,
  aliases, forwarders and vacation.

@@ -1,3 +1,12 @@
+/build-stamp
+/debian/files
+/debian/postfixadmin.debhelper.log
+/debian/postfixadmin.postinst.debhelper
+/debian/postfixadmin.postrm.debhelper
+/debian/postfixadmin.preinst.debhelper
+/debian/postfixadmin.prerm.debhelper
+/debian/postfixadmin.substvars
+/debian/postfixadmin/
 /templates_c/*.tpl.php
 /templates_c/*menu.conf.php
 /vendor/

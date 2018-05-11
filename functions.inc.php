@@ -15,8 +15,8 @@
  * Contains re-usable code.
  */
 
-$version = '3.1';
-$min_db_version = 1837;  # update (at least) before a release with the latest function numbrer in upgrade.php
+$version = '3.2';
+$min_db_version = 1840;  # update (at least) before a release with the latest function numbrer in upgrade.php
 
 /**
  * check_session
@@ -434,7 +434,7 @@ function safesession($param, $default="") {
  * @param string PALANG_desc
  * @param any optional $default
  * @param array $options optional options
- * @param int or $not_in_db - if array, can contain the remaining parameters as associated array
+ * @param int or $not_in_db - if array, can contain the remaining parameters as associated array. Otherwise counts as $not_in_db
  * @param ...
  * @return array for $struct
  */
@@ -556,8 +556,6 @@ function create_page_browser($idxfield, $querypart) {
                 FROM idx t2
                 WHERE (row % $page_size) IN (0,$page_size_zerobase) OR row = $count_results";
     }
-
-    #   echo "<p>$query";
 
     # TODO: $query is MySQL-specific
 
@@ -834,14 +832,19 @@ function encode_header($string, $default_charset = "utf-8") {
 
 
 
-//
-// generate_password
-// Action: Generates a random password
-// Call: generate_password ()
-//
-function generate_password() {
-    // length of the generated password
-    $length = 12;
+/**/ if (!function_exists('random_int')) { # random_int() is available since PHP 7, compat wrapper for PHP 5.x
+    function random_int($min, $max) {
+        return mt_rand($min, $max);
+    }
+/**/ }
+
+/**
+ * Generate a random password of $length characters.
+ * @param int $length (optional, default: 12)
+ * @return string
+ *
+ */
+function generate_password($length = 12) {
 
     // define possible characters
     $possible = "2345678923456789abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ"; # skip 0 and 1 to avoid confusion with O and l
@@ -849,8 +852,8 @@ function generate_password() {
     // add random characters to $password until $length is reached
     $password = "";
     while (strlen($password) < $length) {
-        // pick a random character from the possible ones
-        $char = substr($possible, mt_rand(0, strlen($possible)-1), 1);
+        $random = random_int(0, strlen($possible) -1);
+        $char = substr($possible, $random, 1);
 
         // we don't want this character if it's already in the password
         if (!strstr($password, $char)) {
@@ -865,7 +868,7 @@ function generate_password() {
 
 /**
  * Check if a password is strong enough based on the conditions in $CONF['password_validation']
- * @param String $password
+ * @param string $password
  * @return array of error messages, or empty array if the password is ok
  */
 function validate_password($password) {
@@ -948,6 +951,11 @@ function _pacrypt_authlib($pw, $pw_db) {
     return $password;
 }
 
+/**
+ * @param string $pw - plain text password
+ * @param string $pw_db - encrypted password, or '' for generation.
+ * @return string
+ */
 function _pacrypt_dovecot($pw, $pw_db) {
     global $CONF;
 
@@ -1015,8 +1023,7 @@ function _pacrypt_dovecot($pw, $pw_db) {
     if (empty($dovepasstest)) {
         if (!preg_match('/^\{' . $method . '\}/', $password)) {
             $stderr_output = stream_get_contents($pipes[2]);
-            error_log('dovecotpw password encryption failed.');
-            error_log('STDERR output: ' . $stderr_output);
+            error_log('dovecotpw password encryption failed. STDERR output: '. $stderr_output);
             die("can't encrypt password with dovecotpw, see error log for details");
         }
     } else {
@@ -1037,6 +1044,106 @@ function _pacrypt_dovecot($pw, $pw_db) {
     }
 
     return rtrim($password);
+}
+
+/**
+ * @param string $pw
+ * @param string $pw_db (can be empty if setting a new password)
+ * @return string
+ */
+function _pacrypt_php_crypt($pw, $pw_db) {
+    global $CONF;
+
+    // use PHPs crypt(), which uses the system's crypt()
+    // same algorithms as used in /etc/shadow
+    // you can have mixed hash types in the database for authentication, changed passwords get specified hash type
+    // the algorithm for a new hash is chosen by feeding a salt with correct magic to crypt()
+    // set $CONF['encrypt'] to 'php_crypt' to use the default SHA512 crypt method
+    // set $CONF['encrypt'] to 'php_crypt:METHOD' to use another method; methods supported: DES, MD5, BLOWFISH, SHA256, SHA512
+    // tested on linux
+
+    if (strlen($pw_db) > 0) {
+        // existing pw provided. send entire password hash as salt for crypt() to figure out
+        $salt = $pw_db;
+    } else {
+        $salt_method = 'SHA512'; // hopefully a reasonable default (better than MD5)
+        // no pw provided. create new password hash
+        if (strpos($CONF['encrypt'], ':') !== false) {
+            // use specified hash method
+            $split_method = explode(':', $CONF['encrypt']);
+            $salt_method = $split_method[1];
+        }
+        // create appropriate salt for selected hash method
+        $salt = _php_crypt_generate_crypt_salt($salt_method);
+    }
+    // send it to PHPs crypt()
+    $password = crypt($pw, $salt);
+    return $password;
+}
+
+/**
+ * @param string $hash_type must be one of: MD5, DES, BLOWFISH, SHA256 or SHA512  (default)
+ * @return string
+ */
+function _php_crypt_generate_crypt_salt($hash_type='SHA512') {
+    // generate a salt (with magic matching chosen hash algorithm) for the PHP crypt() function
+
+    // most commonly used alphabet
+    $alphabet = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+    switch ($hash_type) {
+    case 'DES':
+        $alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+        $length = 2;
+        $salt = _php_crypt_random_string($alphabet, $length);
+        return $salt;
+
+    case 'MD5':
+        $length = 12;
+        $algorithm = '1';
+        $salt = _php_crypt_random_string($alphabet, $length);
+        return sprintf('$%s$%s', $algorithm, $salt);
+
+    case 'BLOWFISH':
+        $length = 22;
+        $cost = 10;
+        if (version_compare(PHP_VERSION, '5.3.7') >= 0) {
+            $algorithm = '2y'; // bcrypt, with fixed unicode problem
+        } else {
+            $algorithm = '2a'; // bcrypt
+        }
+        $salt = _php_crypt_random_string($alphabet, $length);
+        return sprintf('$%s$%02d$%s', $algorithm, $cost, $salt);
+
+    case 'SHA256':
+        $length = 16;
+        $algorithm = '5';
+        $salt = _php_crypt_random_string($alphabet, $length);
+        return sprintf('$%s$%s', $algorithm, $salt);
+
+    case 'SHA512':
+        $length = 16;
+        $algorithm = '6';
+        $salt = _php_crypt_random_string($alphabet, $length);
+        return sprintf('$%s$%s', $algorithm, $salt);
+
+    default:
+        die("unknown hash type: '$hash_type'");
+    }
+}
+
+/**
+ * Generates a random string of specified $length from $characters.
+ * @param string $characters
+ * @param int $length
+ * @return string of given $length
+ */
+function _php_crypt_random_string($characters, $length) {
+    $string = '';
+    for ($p = 0; $p < $length; $p++) {
+        $string .= $characters[random_int(0, strlen($characters) -1)];
+    }
+    return $string;
 }
 
 
@@ -1070,6 +1177,10 @@ function pacrypt($pw, $pw_db="") {
 
     if (preg_match("/^dovecot:/", $CONF['encrypt'])) {
         return _pacrypt_dovecot($pw, $pw_db);
+    }
+
+    if (substr($CONF['encrypt'], 0, 9) === 'php_crypt') {
+        return _pacrypt_php_crypt($pw, $pw_db);
     }
 
     die('unknown/invalid $CONF["encrypt"] setting: ' . $CONF['encrypt']);

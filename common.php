@@ -61,7 +61,7 @@ require_once("$incpath/config.inc.php");
 
 if (isset($CONF['configured'])) {
     if ($CONF['configured'] == false) {
-        die("Please edit config.inc.php - change \$CONF['configured'] to true after setting your database settings");
+        die("Please edit config.local.php - change \$CONF['configured'] to true after setting your database settings");
     }
 }
 
@@ -69,6 +69,7 @@ Config::write($CONF);
 
 require_once("$incpath/languages/language.php");
 require_once("$incpath/functions.inc.php");
+require_once("$incpath/lib/random_compat.phar");
 
 if (defined('POSTFIXADMIN_CLI')) {
     $language = 'en'; # TODO: make configurable or autodetect from locale settings
@@ -89,10 +90,10 @@ Config::write('__LANG', $PALANG);
 unset($incpath);
 
 if (!defined('POSTFIXADMIN_CLI')) {
-    if (!is_file(dirname(__FILE__) . "/smarty.inc.php")) {
+    if (!is_file(dirname(__FILE__) . "/lib/smarty.inc.php")) {
         die("smarty.inc.php is missing! Something is wrong...");
     }
-    require_once(dirname(__FILE__) . "/smarty.inc.php");
+    require_once(dirname(__FILE__) . "/lib/smarty.inc.php");
 }
 
 /* vim: set expandtab softtabstop=4 tabstop=4 shiftwidth=4: */

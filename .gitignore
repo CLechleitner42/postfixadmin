@@ -1,5 +1,5 @@
-*.swp
 /build-stamp
+/config.local.php
 /debian/devhost.txt.gz
 /debian/files
 /debian/postfixadmin.debhelper.log

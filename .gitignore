@@ -1,4 +1,5 @@
 /build-stamp
+/config.local.php
 /debian/files
 /debian/postfixadmin.debhelper.log
 /debian/postfixadmin.postinst.debhelper
